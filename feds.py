@@ -5,64 +5,41 @@ import sys
 import os
 from pathlib import Path
 import re
-
-# Variables & Setup
-locale = None
-with open("./locales/en.json", encoding="utf-8") as localeFile:
-	locale = json.load(localeFile)
-
-config = {
-	"language": "en",
-	"adressUserAs": "Sir",
-	"e621Username": "",
-	"e621ApiKey": "",
-	"defaultQuery": "",
-	"downloadsFolder": "./downloads/",
-	"useE926": False
-}
-if Path("config.json").is_file():
-	with open("config.json", "r", encoding="utf-8") as configFile:
-		newConfig = json.load(configFile)
-		for key in newConfig:
-			config[key] = newConfig[key]
-else:
-	print(locale["configNotFound"])
-	with open("config.json", "w", encoding="utf-8") as configFile:
-		json.dump(config, configFile, indent=4)
-
-with open("./locales/" + config["language"] + ".json", encoding="utf-8") as localeFile:
-	newLocale = json.load(localeFile)
-	for key in newLocale:
-		locale[key] = newLocale[key]
-
-searchQuery = config["defaultQuery"]
-if len(sys.argv) > 1:
-	searchQuery = " ".join(sorted(sys.argv[1:]))
-
-if searchQuery == "":
-	print(locale["help"].replace("{{E621}}", "e926" if config["useE926"] else "e621").replace("{{SEARCH}}", "python3 ./feds.py eevee blush" if config["useE926"] else "python3 ./feds.py eevee rating:safe"))
-	sys.exit()
-
-targetFolder = config["downloadsFolder"] + re.sub("[" + re.escape("/\:*?\"<>|") + "]", "_", searchQuery) + "/"
-if not Path(targetFolder).is_dir():
-	print(locale["creatingDownloadFolder"].replace("{{FOLDER}}", targetFolder))
-	Path(targetFolder).mkdir(parents=True, exist_ok=True)
-
-archiveInfo = {
-	"newestPost": 0,
-	"oldestPost": 0
-}
-if Path(targetFolder + ".info.json").is_file():
-	with open(targetFolder + ".info.json", "r", encoding="utf-8") as archiveInfoFile:
-		archiveInfo = json.load(archiveInfoFile)
-
-targetDomain = "https://" + ("e926" if config["useE926"] else "e621") + ".net"
+import copy
 
 # Functions
+def parseParams(params):
+	match params[0].lower():
+		case "-maxposts":
+			try:
+				config["maxPosts"] = int(params[1])
+			except ValueError:
+				sys.exit(locale["errors"]["mustBeWholeNumber"].replace("{{VALUE}}", params[0]))
+			parseParams(params[2:])
+		case "-maxdata":
+			try:
+				config["maxBytes"] = int(params[1])
+			except ValueError:
+				sys.exit(locale["errors"]["mustBeWholeNumber"].replace("{{VALUE}}", params[0]))
+			parseParams(params[2:])
+		case "-e926":
+			config["useE926"] = True
+			parseParams(params[1:])
+		case "-search":
+			config["defaultQuery"] = " ".join(sorted(params[1:]))
+		case _:
+			config["defaultQuery"] = " ".join(sorted(params))
+
+def loadLocaleFile(language):
+	with open("./locales/" + language + ".json", encoding="utf-8") as localeFile:
+		newLocale = json.load(localeFile)
+		for key in newLocale:
+			locale[key] = newLocale[key]
+
 def getPosts(before):
 	queryParams = "limit=320"
-	if len(searchQuery) > 0:
-		queryParams += "&tags=" + urllib.parse.quote(searchQuery)
+	if len(config["defaultQuery"]) > 0:
+		queryParams += "&tags=" + urllib.parse.quote(config["defaultQuery"])
 	if before > 0:
 		queryParams += "&page=b" + str(before)
 	if config["e621Username"] != "" and config["e621ApiKey"] != "":
@@ -88,6 +65,65 @@ def formatDataAmount(bytes):
 		exponent += 1
 	return str(round(bytes, 2)) + unitStrings[exponent]
 
+
+
+
+# Variables & Setup
+# locale
+locale = {}
+loadLocaleFile("en")
+
+# config
+defaultConfig = {
+	"language": "en",
+	"adressUserAs": "Sir",
+	"e621Username": "",
+	"e621ApiKey": "",
+	"defaultQuery": "",
+	"downloadsFolder": "./downloads/",
+	"useE926": False
+}
+config = copy.deepcopy(defaultConfig)
+if Path("config.json").is_file():
+	with open("config.json", "r", encoding="utf-8") as configFile:
+		newConfig = json.load(configFile)
+		for key in newConfig:
+			config[key] = newConfig[key]
+
+# console parameters
+if len(sys.argv) > 1:
+	parseParams(sys.argv[1:])
+
+# create default config if it doesn't exist yet
+if not Path("config.json").is_file():
+	print(locale["configNotFound"])
+	with open("config.json", "w", encoding="utf-8") as configFile:
+		json.dump(defaultConfig, configFile, indent=4)
+
+# check if query was provided
+if config["defaultQuery"] == "":
+	print(locale["help"].replace("{{E621}}", "e926" if config["useE926"] else "e621").replace("{{SEARCH}}", "python3 ./feds.py eevee blush" if config["useE926"] else "python3 ./feds.py eevee rating:safe"))
+	sys.exit()
+
+# get target folder
+targetFolder = config["downloadsFolder"] + re.sub("[" + re.escape("/\:*?\"<>|") + "]", "_", config["defaultQuery"]) + "/"
+if not Path(targetFolder).is_dir():
+	print(locale["creatingDownloadFolder"].replace("{{FOLDER}}", targetFolder))
+	Path(targetFolder).mkdir(parents=True, exist_ok=True)
+
+archiveInfo = {
+	"newestPost": 0,
+	"oldestPost": 0
+}
+if Path(targetFolder + ".info.json").is_file():
+	with open(targetFolder + ".info.json", "r", encoding="utf-8") as archiveInfoFile:
+		archiveInfo = json.load(archiveInfoFile)
+
+targetDomain = "https://" + ("e926" if config["useE926"] else "e621") + ".net"
+
+
+
+
 # Actual Script
 posts = getPosts(archiveInfo["oldestPost"])
 stopAtPost = archiveInfo["newestPost"]
@@ -101,6 +137,7 @@ else:
 
 postsDownloaded = 0
 bytesDownloaded = 0
+longestPostId = 0
 reachedEnd = False
 try:
 	while not reachedEnd:
@@ -119,11 +156,16 @@ try:
 			if post["file"]["url"] == None:
 				print(locale["imageUrlNull"].replace("{{POST}}", str(post["id"])))
 			else:
-				newFile = urllib.request.urlretrieve(post["file"]["url"], targetFolder + str(post["id"]) + ".png")[0]
-				print(locale["downloading"].replace("{{POST}}", str(post["id"])).replace("{{URL}}", post["file"]["url"]))
+				fileSize = os.stat(urllib.request.urlretrieve(post["file"]["url"], targetFolder + str(post["id"]) + ".png")[0]).st_size
+				longestPostId = max(longestPostId, len(str(post["id"])))
+				print(locale["downloaded"].replace("{{POST}}", str(post["id"]).rjust(longestPostId, " ")).replace("{{URL}}", post["file"]["url"].ljust(73, " ")).replace("{{SIZE}}", formatDataAmount(fileSize).rjust(10, " ")))
 				postsDownloaded += 1
-				bytesDownloaded += os.stat(newFile).st_size
+				bytesDownloaded += fileSize
 			saveArchiveInfo()
+			
+			if ("maxPosts" in config and postsDownloaded >= config["maxPosts"]) or ("maxBytes" in config and bytesDownloaded >= config["maxBytes"]):
+				reachedEnd = True
+				break
 		
 		if not reachedEnd:
 			posts = getPosts(archiveInfo["oldestPost"])

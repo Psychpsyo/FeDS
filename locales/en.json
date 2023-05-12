@@ -1,10 +1,13 @@
 {
 	"help": "To start downloading, simply pass an {{E621}} search to this script like so:\n{{SEARCH}}",
 	"creatingDownloadFolder": "Creating folder '{{FOLDER}}' to download to.",
-	"downloading": "Downloading post #{{POST}} from {{URL}}",
+	"downloaded": "Downloaded post #{{POST}} from {{URL}} ({{SIZE}})",
 	"imageUrlNull": "Not downloading post #{{POST}} because its file URL is null. (probably on the default blacklist)",
 	"finished": "Finished after downloading {{COUNT}} new posts ({{DATA}}), {{USER}}.",
 	"downloadInterrupted": "Download interrupted after {{COUNT}} file(s). ({{DATA}}) It will resume from this position if you run the same command again.",
 	"continuingDownload": "Continuing download, starting at post #{{POST}}.",
-	"configNotFound": "Config file not found. Creating a new one."
+	"configNotFound": "Config file not found. Creating a new one.",
+	"errors": {
+		"mustBeWholeNumber": "ERROR: {{VALUE}} must be a whole number."
+	}
 }

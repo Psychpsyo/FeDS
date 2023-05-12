@@ -1,7 +1,7 @@
 {
 	"help": "Um Bilder herunterzuladen, rufe dieses Script mit einer {{E621}}-Suche so auf:\n{{SEARCH}}",
 	"creatingDownloadFolder": "Der Ordner '{{FOLDER}}' wird als Download-Ziel erstellt.",
-	"downloading": "Post #{{POST}} wird heruntergeladen von {{URL}}",
+	"downloaded": "Post #{{POST}} wurde heruntergeladen von {{URL}} ({{SIZE}})",
 	"imageUrlNull": "Post #{{POST}} wird nicht heruntergeladen, da die Datei-URL null ist. (wahrscheinlich auf der Standard-Blacklist)",
 	"finished": "Fertig! {{COUNT}} neue Posts ({{DATA}}) wurden heruntergeladen, {{USER}}.",
 	"downloadInterrupted": "Download nach {{COUNT}} Datei(en) ({{DATA}}) unterbrochen. Wenn du den selben Befehl erneut ausführst, wird an dieser Stelle fortgesetzt.",
