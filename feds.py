@@ -7,7 +7,79 @@ from pathlib import Path
 import re
 import copy
 
-# Functions
+# Helper Functions
+def downloadArchive(folder):
+	archiveInfo = {
+		"query": None,
+		"newestPost": 0,
+		"oldestPost": 0
+	}
+	try:
+		with open(folder + ".info.json", "r", encoding="utf-8") as archiveInfoFile:
+			newArchiveInfo = json.load(archiveInfoFile)
+			for key in newArchiveInfo:
+				archiveInfo[key] = newArchiveInfo[key]
+	except:
+		print(locale["noArchiveInfo"].replace("{{FOLDER}}", folder))
+		return
+	
+	if archiveInfo["query"] == None:
+		print(locale["archiveNoQuery"].replace("{{FOLDER}}", folder).replace("{{E621}}", "e926" if config["useE926"] else "e621"))
+		return
+	
+	print(locale["startingDownload"].replace("{{FOLDER}}", folder).replace("{{QUERY}}", archiveInfo["query"]))
+	
+	posts = getPosts(archiveInfo["query"], archiveInfo["oldestPost"])
+	stopAtPost = archiveInfo["newestPost"]
+	if archiveInfo["oldestPost"] > 0:
+		print(locale["continuingDownload"].replace("{{POST}}", str(archiveInfo["oldestPost"])))
+		if archiveInfo["newestPost"] > archiveInfo["oldestPost"]:
+			stopAtPost = 0
+	elif len(posts) > 0:
+		# Picking up from the newest post overall
+		archiveInfo["newestPost"] = posts[0]["id"]
+	
+	postsDownloaded = 0
+	bytesDownloaded = 0
+	longestPostId = 0
+	reachedEnd = False
+	try:
+		while not reachedEnd:
+			if len(posts) == 0:
+				if stopAtPost == 0 and archiveInfo["newestPost"] > 0:
+					archiveInfo["oldestPost"] = 0
+					stopAtPost = archiveInfo["newestPost"]
+				else:
+					reachedEnd = True
+			for post in posts:
+				archiveInfo["oldestPost"] = post["id"]
+				if archiveInfo["oldestPost"] <= stopAtPost:
+					# Ran into the old newestPost
+					reachedEnd = True
+					break
+				if post["file"]["url"] == None:
+					print(locale["imageUrlNull"].replace("{{POST}}", str(post["id"])))
+				else:
+					fileSize = os.stat(urllib.request.urlretrieve(post["file"]["url"], folder + str(post["id"]) + ".png")[0]).st_size
+					longestPostId = max(longestPostId, len(str(post["id"])))
+					print(locale["downloaded"].replace("{{POST}}", str(post["id"]).rjust(longestPostId, " ")).replace("{{URL}}", post["file"]["url"].ljust(73, " ")).replace("{{SIZE}}", formatDataAmount(fileSize).rjust(10, " ")))
+					postsDownloaded += 1
+					bytesDownloaded += fileSize
+				
+				with open(folder + ".info.json", "w") as archiveInfoFile:
+					json.dump(archiveInfo, archiveInfoFile)
+				
+				if ("maxPosts" in config and postsDownloaded >= config["maxPosts"]) or ("maxBytes" in config and bytesDownloaded >= config["maxBytes"]):
+					reachedEnd = True
+					break
+			
+			if not reachedEnd:
+				posts = getPosts(archiveInfo["query"], archiveInfo["oldestPost"])
+		
+		print(locale["finished"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{USER}}", config["adressUserAs"]).replace("{{DATA}}", formatDataAmount(bytesDownloaded)))
+	except KeyboardInterrupt:
+		print(locale["downloadInterrupted"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{DATA}}", formatDataAmount(bytesDownloaded)))
+
 def parseParams(params):
 	match params[0].lower():
 		case "-maxposts":
@@ -25,6 +97,15 @@ def parseParams(params):
 		case "-e926":
 			config["useE926"] = True
 			parseParams(params[1:])
+		case "-update":
+			# update all existing archives
+			for file in os.listdir(config["downloadsFolder"]):
+				file = config["downloadsFolder"] + file
+				if Path(file).is_dir():
+					downloadArchive(file + "/")
+					print()
+			print(locale["updatedAll"].replace("{{USER}}", config["adressUserAs"]))
+			sys.exit()
 		case "-search":
 			config["defaultQuery"] = " ".join(sorted(params[1:]))
 		case _:
@@ -36,29 +117,25 @@ def loadLocaleFile(language):
 		for key in newLocale:
 			locale[key] = newLocale[key]
 
-def getPosts(before):
+def getPosts(query, before):
 	queryParams = "limit=320"
-	if len(config["defaultQuery"]) > 0:
-		queryParams += "&tags=" + urllib.parse.quote(config["defaultQuery"])
+	if len(query) > 0:
+		queryParams += "&tags=" + urllib.parse.quote(query)
 	if before > 0:
 		queryParams += "&page=b" + str(before)
 	if config["e621Username"] != "" and config["e621ApiKey"] != "":
 		queryParams += "&login=" + urllib.parse.quote(config["e621Username"])
 		queryParams += "&api_key=" + urllib.parse.quote(config["e621ApiKey"])
 	posts = requests.get(
-		targetDomain + "/posts.json?" + queryParams,
+		"https://" + ("e926" if config["useE926"] else "e621") + ".net/posts.json?" + queryParams,
 		headers={
 			"User-Agent": "Funky e621 Download Script! :D"
 		}
 	)
 	return posts.json()["posts"]
 
-def saveArchiveInfo():
-	with open(targetFolder + ".info.json", "w") as archiveInfoFile:
-		json.dump(archiveInfo, archiveInfoFile)
-
 def formatDataAmount(bytes):
-	unitStrings = ["bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB", "RB", "QB"]
+	unitStrings = ["byte" if bytes == 1 else "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB", "RB", "QB"]
 	exponent = 0
 	while bytes > 1000:
 		bytes /= 1000
@@ -105,71 +182,19 @@ if config["defaultQuery"] == "":
 	print(locale["help"].replace("{{E621}}", "e926" if config["useE926"] else "e621").replace("{{SEARCH}}", "python3 ./feds.py eevee blush" if config["useE926"] else "python3 ./feds.py eevee rating:safe"))
 	sys.exit()
 
-# get target folder
+# get/create target folder
 targetFolder = config["downloadsFolder"] + re.sub("[" + re.escape("/\:*?\"<>|") + "]", "_", config["defaultQuery"]) + "/"
 if not Path(targetFolder).is_dir():
 	print(locale["creatingDownloadFolder"].replace("{{FOLDER}}", targetFolder))
 	Path(targetFolder).mkdir(parents=True, exist_ok=True)
 
-archiveInfo = {
-	"newestPost": 0,
-	"oldestPost": 0
-}
-if Path(targetFolder + ".info.json").is_file():
-	with open(targetFolder + ".info.json", "r", encoding="utf-8") as archiveInfoFile:
-		archiveInfo = json.load(archiveInfoFile)
+if not Path(targetFolder + ".info.json").is_file():
+	with open(targetFolder + ".info.json", "w") as archiveInfoFile:
+		json.dump({
+			"query": config["defaultQuery"],
+			"newestPost": 0,
+			"oldestPost": 0
+		}, archiveInfoFile)
 
-targetDomain = "https://" + ("e926" if config["useE926"] else "e621") + ".net"
-
-
-
-
-# Actual Script
-posts = getPosts(archiveInfo["oldestPost"])
-stopAtPost = archiveInfo["newestPost"]
-if archiveInfo["oldestPost"] > 0:
-	print(locale["continuingDownload"].replace("{{POST}}", str(posts[0]["id"])))
-	if archiveInfo["newestPost"] > archiveInfo["oldestPost"]:
-		stopAtPost = 0
-else:
-	# Picking up from the newest post overall
-	archiveInfo["newestPost"] = posts[0]["id"]
-
-postsDownloaded = 0
-bytesDownloaded = 0
-longestPostId = 0
-reachedEnd = False
-try:
-	while not reachedEnd:
-		if len(posts) == 0:
-			if stopAtPost == 0:
-				archiveInfo["oldestPost"] = 0
-				stopAtPost = archiveInfo["newestPost"]
-			else:
-				reachedEnd = True
-		for post in posts:
-			archiveInfo["oldestPost"] = post["id"]
-			if archiveInfo["oldestPost"] <= stopAtPost:
-				# Ran into the old newestPost
-				reachedEnd = True
-				break
-			if post["file"]["url"] == None:
-				print(locale["imageUrlNull"].replace("{{POST}}", str(post["id"])))
-			else:
-				fileSize = os.stat(urllib.request.urlretrieve(post["file"]["url"], targetFolder + str(post["id"]) + ".png")[0]).st_size
-				longestPostId = max(longestPostId, len(str(post["id"])))
-				print(locale["downloaded"].replace("{{POST}}", str(post["id"]).rjust(longestPostId, " ")).replace("{{URL}}", post["file"]["url"].ljust(73, " ")).replace("{{SIZE}}", formatDataAmount(fileSize).rjust(10, " ")))
-				postsDownloaded += 1
-				bytesDownloaded += fileSize
-			saveArchiveInfo()
-			
-			if ("maxPosts" in config and postsDownloaded >= config["maxPosts"]) or ("maxBytes" in config and bytesDownloaded >= config["maxBytes"]):
-				reachedEnd = True
-				break
-		
-		if not reachedEnd:
-			posts = getPosts(archiveInfo["oldestPost"])
-	
-	print(locale["finished"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{USER}}", config["adressUserAs"]).replace("{{DATA}}", formatDataAmount(bytesDownloaded)))
-except KeyboardInterrupt:
-	print(locale["downloadInterrupted"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{DATA}}", formatDataAmount(bytesDownloaded)))
+# download
+downloadArchive(targetFolder)

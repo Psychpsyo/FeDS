@@ -1,10 +1,17 @@
 {
 	"help": "Um Bilder herunterzuladen, rufe dieses Script mit einer {{E621}}-Suche so auf:\n{{SEARCH}}",
 	"creatingDownloadFolder": "Der Ordner '{{FOLDER}}' wird als Download-Ziel erstellt.",
+	"startingDownload": "\"{{QUERY}}\" wird nach {{FOLDER}} heruntergeladen...",
 	"downloaded": "Post #{{POST}} wurde heruntergeladen von {{URL}} ({{SIZE}})",
 	"imageUrlNull": "Post #{{POST}} wird nicht heruntergeladen, da die Datei-URL null ist. (wahrscheinlich auf der Standard-Blacklist)",
 	"finished": "Fertig! {{COUNT}} neue Posts ({{DATA}}) wurden heruntergeladen, {{USER}}.",
 	"downloadInterrupted": "Download nach {{COUNT}} Datei(en) ({{DATA}}) unterbrochen. Wenn du den selben Befehl erneut ausführst, wird an dieser Stelle fortgesetzt.",
 	"continuingDownload": "Download wird von Post #{{POST}} aus fortgeführt.",
-	"configNotFound": "Config-Datei nicht gefunden. Eine neue wird erstellt."
+	"updatedAll": "Alle ihre Archive wurde aktualisiert, {{USER}}.",
+	"configNotFound": "Config-Datei nicht gefunden. Eine neue wird erstellt.",
+	"noArchiveInfo": "Konnte die .info-Datei in {{FOLDER}} nicht öffnen; es werden keine neuen Bilder in diesen Ordner gespeichert.",
+	"archiveNoQuery": "Die .info-Datei in {{FOLDER}} enthält keine {{E621}}-Suche; es werden keine neuen Bilder in diesen Ordner gespeichert.",
+	"errors": {
+		"mustBeWholeNumber": "ERROR: {{VALUE}} muss eine ganze Zahl sein."
+	}
 }
