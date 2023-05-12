@@ -60,7 +60,7 @@ def downloadArchive(folder):
 				if post["file"]["url"] == None:
 					print(locale["imageUrlNull"].replace("{{POST}}", str(post["id"])))
 				else:
-					fileSize = os.stat(urllib.request.urlretrieve(post["file"]["url"], folder + str(post["id"]) + ".png")[0]).st_size
+					fileSize = os.stat(urllib.request.urlretrieve(post["file"]["url"], folder + str(post["id"]) + "." + post["file"]["ext"])[0]).st_size
 					longestPostId = max(longestPostId, len(str(post["id"])))
 					print(locale["downloaded"].replace("{{POST}}", str(post["id"]).rjust(longestPostId, " ")).replace("{{URL}}", post["file"]["url"].ljust(73, " ")).replace("{{SIZE}}", formatDataAmount(fileSize).rjust(10, " ")))
 					postsDownloaded += 1
@@ -103,7 +103,7 @@ def parseParams(params):
 				file = config["downloadsFolder"] + file
 				if Path(file).is_dir():
 					downloadArchive(file + "/")
-					print()
+					print("\n")
 			print(locale["updatedAll"].replace("{{USER}}", config["adressUserAs"]))
 			sys.exit()
 		case "-search":
