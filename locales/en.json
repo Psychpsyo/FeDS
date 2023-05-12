@@ -4,7 +4,7 @@
 	"downloading": "Downloading post #{{POST}} from {{URL}}",
 	"imageUrlNull": "Not downloading post #{{POST}} because its file URL is null. (probably on the default blacklist)",
 	"finished": "Finished after downloading {{COUNT}} new posts ({{DATA}}), {{USER}}.",
-	"downloadInterrupted": "Download interrupted after {{COUNT}} files. ({{DATA}}) It will resume from this position if you run the same command again.",
+	"downloadInterrupted": "Download interrupted after {{COUNT}} file(s). ({{DATA}}) It will resume from this position if you run the same command again.",
 	"continuingDownload": "Continuing download, starting at post #{{POST}}.",
 	"configNotFound": "Config file not found. Creating a new one."
 }

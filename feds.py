@@ -80,6 +80,14 @@ def saveArchiveInfo():
 	with open(targetFolder + ".info.json", "w") as archiveInfoFile:
 		json.dump(archiveInfo, archiveInfoFile)
 
+def formatDataAmount(bytes):
+	unitStrings = ["bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB", "RB", "QB"]
+	exponent = 0
+	while bytes > 1000:
+		bytes /= 1000
+		exponent += 1
+	return str(round(bytes, 2)) + unitStrings[exponent]
+
 # Actual Script
 posts = getPosts(archiveInfo["oldestPost"])
 stopAtPost = archiveInfo["newestPost"]
@@ -120,6 +128,6 @@ try:
 		if not reachedEnd:
 			posts = getPosts(archiveInfo["oldestPost"])
 	
-	print(locale["finished"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{USER}}", config["adressUserAs"]).replace("{{DATA}}", str(round(bytesDownloaded / 1000 / 1000, 2)) + "mb"))
+	print(locale["finished"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{USER}}", config["adressUserAs"]).replace("{{DATA}}", formatDataAmount(bytesDownloaded)))
 except KeyboardInterrupt:
-	print(locale["downloadInterrupted"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{DATA}}", str(round(bytesDownloaded / 1000 / 1000, 2)) + "mb"))
+	print(locale["downloadInterrupted"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{DATA}}", formatDataAmount(bytesDownloaded)))
