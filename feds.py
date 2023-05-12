@@ -2,6 +2,7 @@ import urllib
 import requests
 import json
 import sys
+import os
 from pathlib import Path
 import re
 
@@ -90,7 +91,8 @@ else:
 	# Picking up from the newest post overall
 	archiveInfo["newestPost"] = posts[0]["id"]
 
-newPostCount = 0
+postsDownloaded = 0
+bytesDownloaded = 0
 reachedEnd = False
 try:
 	while not reachedEnd:
@@ -109,14 +111,15 @@ try:
 			if post["file"]["url"] == None:
 				print(locale["imageUrlNull"].replace("{{POST}}", str(post["id"])))
 			else:
+				newFile = urllib.request.urlretrieve(post["file"]["url"], targetFolder + str(post["id"]) + ".png")[0]
 				print(locale["downloading"].replace("{{POST}}", str(post["id"])).replace("{{URL}}", post["file"]["url"]))
-				urllib.request.urlretrieve(post["file"]["url"], targetFolder + str(post["id"]) + ".png")
-				newPostCount += 1
+				postsDownloaded += 1
+				bytesDownloaded += os.stat(newFile).st_size
 			saveArchiveInfo()
 		
 		if not reachedEnd:
 			posts = getPosts(archiveInfo["oldestPost"])
 	
-	print(locale["finished"].replace("{{COUNT}}", str(newPostCount)).replace("{{USER}}", config["adressUserAs"]))
+	print(locale["finished"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{USER}}", config["adressUserAs"]).replace("{{DATA}}", str(round(bytesDownloaded / 1000 / 1000, 2)) + "mb"))
 except KeyboardInterrupt:
-	print(locale["downloadInterrupted"])
+	print(locale["downloadInterrupted"].replace("{{COUNT}}", str(postsDownloaded)).replace("{{DATA}}", str(round(bytesDownloaded / 1000 / 1000, 2)) + "mb"))
