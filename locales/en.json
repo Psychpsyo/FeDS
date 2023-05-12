@@ -1,0 +1,8 @@
+{
+	"downloading": "Downloading post #{{POST}} from {{URL}}",
+	"imageUrlNull": "Not downloading post #{{POST}} because its file URL is null. (probably on the default blacklist)",
+	"finished": "Finished after downloading {{COUNT}} new posts, {{USER}}.",
+	"downloadInterrupted": "Download interrupted. It will resume from this position if you run the same command again.",
+	"continuingDownload": "Continuing download from post #{{POST}}.",
+	"configNotFound": "Config file not found. Creating a new one."
+}

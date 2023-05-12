@@ -1,0 +1,9 @@
+{
+    "language": "de",
+    "adressUserAs": "Sir",
+    "e621Username": "",
+    "e621ApiKey": "",
+    "defaultQuery": "mr._bean",
+    "downloadsFolder": "./downloads/",
+    "useE926": false
+}

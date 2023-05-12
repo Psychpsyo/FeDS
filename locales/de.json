@@ -1,0 +1,8 @@
+{
+	"downloading": "Post #{{POST}} wird heruntergeladen von {{URL}}",
+	"imageUrlNull": "Post #{{POST}} wird nicht heruntergeladen, da die Datei-URL null ist. (wahrscheinlich auf der Standard-Blacklist)",
+	"finished": "Fertig! {{COUNT}} neue Posts wurden heruntergeladen, {{USER}}.",
+	"downloadInterrupted": "Download unterbrochen. Wenn du den selben Befehl erneut ausführst, wird an dieser Stelle fortgesetzt.",
+	"continuingDownload": "Download wird von Post #{{POST}} fortgeführt.",
+	"configNotFound": "Config-Datei nicht gefunden. Eine neue wird erstellt."
+}
