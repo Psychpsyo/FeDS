@@ -3,6 +3,7 @@ import requests
 import json
 import sys
 from pathlib import Path
+import re
 
 # Variables & Setup
 locale = None
@@ -14,7 +15,7 @@ config = {
 	"adressUserAs": "Sir",
 	"e621Username": "",
 	"e621ApiKey": "",
-	"defaultQuery": "mr._bean",
+	"defaultQuery": "",
 	"downloadsFolder": "./downloads/",
 	"useE926": False
 }
@@ -37,8 +38,14 @@ searchQuery = config["defaultQuery"]
 if len(sys.argv) > 1:
 	searchQuery = " ".join(sorted(sys.argv[1:]))
 
-targetFolder = config["downloadsFolder"] + searchQuery + "/"
-Path(targetFolder).mkdir(parents=True, exist_ok=True)
+if searchQuery == "":
+	print(locale["help"].replace("{{E621}}", "e926" if config["useE926"] else "e621").replace("{{SEARCH}}", "python3 ./feds.py eevee blush" if config["useE926"] else "python3 ./feds.py eevee rating:safe"))
+	sys.exit()
+
+targetFolder = config["downloadsFolder"] + re.sub("[" + re.escape("/\:*?\"<>|") + "]", "_", searchQuery) + "/"
+if not Path(targetFolder).is_dir():
+	print(locale["creatingDownloadFolder"].replace("{{FOLDER}}", targetFolder))
+	Path(targetFolder).mkdir(parents=True, exist_ok=True)
 
 archiveInfo = {
 	"newestPost": 0,

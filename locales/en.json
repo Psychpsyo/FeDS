@@ -1,4 +1,6 @@
 {
+	"help": "To start downloading, simply pass an {{E621}} search to this script like so:\n{{SEARCH}}",
+	"creatingDownloadFolder": "Creating folder '{{FOLDER}}' to download to.",
 	"downloading": "Downloading post #{{POST}} from {{URL}}",
 	"imageUrlNull": "Not downloading post #{{POST}} because its file URL is null. (probably on the default blacklist)",
 	"finished": "Finished after downloading {{COUNT}} new posts, {{USER}}.",

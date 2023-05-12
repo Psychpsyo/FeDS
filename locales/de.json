@@ -1,4 +1,6 @@
 {
+	"help": "Um Bilder herunterzuladen, rufe dieses Script mit einer {{E621}}-Suche so auf:\n{{SEARCH}}",
+	"creatingDownloadFolder": "Der Ordner '{{FOLDER}}' wird als Download-Ziel erstellt.",
 	"downloading": "Post #{{POST}} wird heruntergeladen von {{URL}}",
 	"imageUrlNull": "Post #{{POST}} wird nicht heruntergeladen, da die Datei-URL null ist. (wahrscheinlich auf der Standard-Blacklist)",
 	"finished": "Fertig! {{COUNT}} neue Posts wurden heruntergeladen, {{USER}}.",
